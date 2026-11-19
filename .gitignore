@@ -22,3 +22,10 @@ models/deep/
 # Système
 .DS_Store
 Thumbs.db
+
+# Ressources NLTK téléchargées automatiquement
+api/nltk_data/
+
+# Fichiers temporaires et expérimentaux
+__pycache__/
+*.pyc
