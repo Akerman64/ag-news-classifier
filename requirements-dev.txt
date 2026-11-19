@@ -1,0 +1,15 @@
+# Dépendances des NOTEBOOKS (en local) : pip install -r requirements-dev.txt
+-r requirements.txt
+
+# Données et visualisation
+pandas
+matplotlib
+seaborn
+wordcloud
+
+# NLP
+datasets
+
+# Notebooks et serveur local de l'API
+jupyter
+uvicorn

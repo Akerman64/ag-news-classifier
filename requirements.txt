@@ -1,0 +1,7 @@
+# Dépendances de l'APPLICATION (installées par Vercel au déploiement) : à garder légères.
+# scikit-learn doit être à la MÊME version que celle utilisée pour exporter models/model.joblib.
+fastapi
+scikit-learn==1.8.0
+numpy
+joblib
+nltk
