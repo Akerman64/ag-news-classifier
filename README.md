@@ -280,7 +280,7 @@ ag-news-classifier/
 
 ### 1. Récupérer le projet
 ```bash
-git clone https://github.com/<proprietaire>/ag-news-classifier.git
+git clone https://github.com/Akerman64/ag-news-classifier.git
 cd ag-news-classifier
 ```
 
