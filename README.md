@@ -4,7 +4,9 @@ Projet de data science IPSSI : une **web app qui classe automatiquement un artic
 
 L'utilisateur colle un texte en anglais dans l'interface, l'API le nettoie, interroge le modèle et renvoie la catégorie prédite avec la probabilité de chaque catégorie.
 
-🔗 **Application en ligne** : *lien Vercel à ajouter après le déploiement*
+🔗 **Application en ligne** : **https://ag-news-classifier.vercel.app** (documentation de l'API : [/docs](https://ag-news-classifier.vercel.app/docs))
+
+> La première requête après un moment d'inactivité prend quelques secondes (démarrage à froid du serveur), les suivantes sont instantanées.
 
 ## 📌 Le projet en bref
 
