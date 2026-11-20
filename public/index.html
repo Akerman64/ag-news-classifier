@@ -1,0 +1,370 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AG News Classifier</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #101827;
+            color: #f1f5f9;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 850px;
+            margin: auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        header h1 {
+            font-size: 36px;
+            margin-bottom: 12px;
+        }
+
+        header p {
+            color: #94a3b8;
+            line-height: 1.6;
+        }
+
+        .card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 180px;
+            resize: vertical;
+            padding: 16px;
+            border-radius: 10px;
+            border: 1px solid #475569;
+            background: #0f172a;
+            color: white;
+            font-size: 15px;
+            line-height: 1.6;
+            outline: none;
+        }
+
+        textarea:focus {
+            border-color: #38bdf8;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        button {
+            padding: 13px 22px;
+            border: none;
+            border-radius: 9px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .primary {
+            background: #0ea5e9;
+            color: white;
+            flex: 1;
+        }
+
+        .primary:hover {
+            background: #0284c7;
+        }
+
+        .secondary {
+            background: #334155;
+            color: white;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .result-title {
+            color: #94a3b8;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .category {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 25px;
+        }
+
+        .probability {
+            margin-bottom: 20px;
+        }
+
+        .prob-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .bar {
+            height: 10px;
+            background: #334155;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .fill {
+            height: 100%;
+            width: 0;
+            border-radius: 20px;
+            transition: width 0.5s ease;
+        }
+
+        .World { color: #38bdf8; }
+        .Sports { color: #4ade80; }
+        .Business { color: #fbbf24; }
+        .Sci-Tech { color: #c084fc; }
+
+        .error {
+            color: #f87171;
+            margin-top: 15px;
+        }
+
+        footer {
+            text-align: center;
+            color: #64748b;
+            margin-top: 30px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <header>
+        <h1>AG News Classifier</h1>
+        <p>
+            Classification automatique d'articles de presse
+            avec Machine Learning.
+        </p>
+    </header>
+
+    <section class="card">
+
+        <label for="article">Votre article en anglais</label>
+
+        <textarea
+            id="article"
+            placeholder="Paste your news article here..."
+        ></textarea>
+
+        <div class="actions">
+
+            <button
+                class="primary"
+                id="classifyBtn"
+                onclick="classifyArticle()"
+            >
+                Classifier l'article
+            </button>
+
+            <button
+                class="secondary"
+                onclick="resetPage()"
+            >
+                Effacer
+            </button>
+
+        </div>
+
+        <p id="error" class="error"></p>
+
+    </section>
+
+    <section id="results" class="card hidden">
+
+        <p class="result-title">CATÉGORIE PRÉDITE</p>
+
+        <div id="category" class="category"></div>
+
+        <h3 style="margin-bottom: 20px;">
+            Probabilités par catégorie
+        </h3>
+
+        <div id="probabilities"></div>
+
+    </section>
+
+    <footer>
+        AG News Classifier — Projet Machine Learning
+    </footer>
+
+</div>
+
+<script>
+
+    const API_URL = "http://127.0.0.1:8000/api/predict";
+
+    async function classifyArticle() {
+
+        const article = document
+            .getElementById("article")
+            .value.trim();
+
+        const button = document.getElementById("classifyBtn");
+        const error = document.getElementById("error");
+        const results = document.getElementById("results");
+
+        error.textContent = "";
+        results.classList.add("hidden");
+
+        if (!article) {
+            error.textContent = "Veuillez saisir un article.";
+            return;
+        }
+
+        button.disabled = true;
+        button.textContent = "Classification en cours...";
+
+        try {
+
+            const response = await fetch(API_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    text: article
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    data.detail || "Une erreur est survenue."
+                );
+            }
+
+            displayResults(data);
+
+        } catch (err) {
+
+            error.textContent =
+                "Erreur : " + err.message +
+                ". Vérifiez que l'API est démarrée.";
+
+        } finally {
+
+            button.disabled = false;
+            button.textContent = "Classifier l'article";
+
+        }
+    }
+
+
+    function displayResults(data) {
+
+        const category = document.getElementById("category");
+        const probabilities = document.getElementById("probabilities");
+
+        const cssCategory = data.categorie.replace("/", "-");
+
+        category.textContent = data.categorie;
+        category.className = "category " + cssCategory;
+
+        probabilities.innerHTML = "";
+
+        const colors = {
+            "World": "#38bdf8",
+            "Sports": "#4ade80",
+            "Business": "#fbbf24",
+            "Sci/Tech": "#c084fc"
+        };
+
+        const sorted = Object.entries(data.probabilites)
+            .sort((a, b) => b[1] - a[1]);
+
+        sorted.forEach(([name, probability]) => {
+
+            const percentage = probability * 100;
+
+            const item = document.createElement("div");
+            item.className = "probability";
+
+            const header = document.createElement("div");
+            header.className = "prob-header";
+
+            const label = document.createElement("span");
+            label.textContent = name;
+
+            const value = document.createElement("strong");
+            value.textContent = percentage.toFixed(2) + " %";
+
+            header.append(label, value);
+
+            const bar = document.createElement("div");
+            bar.className = "bar";
+
+            const fill = document.createElement("div");
+            fill.className = "fill";
+            fill.style.width = percentage + "%";
+            fill.style.background = colors[name];
+
+            bar.appendChild(fill);
+            item.append(header, bar);
+
+            probabilities.appendChild(item);
+
+        });
+
+        document
+            .getElementById("results")
+            .classList.remove("hidden");
+    }
+
+
+    function resetPage() {
+
+        document.getElementById("article").value = "";
+        document.getElementById("error").textContent = "";
+        document.getElementById("results").classList.add("hidden");
+
+    }
+
+</script>
+
+</body>
+</html>
