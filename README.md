@@ -34,42 +34,42 @@ L'utilisateur colle un texte dans l'interface, l'API interroge le modèle NLP et
 
 | Personne | Rôle | Responsabilités | Livrables |
 |---|---|---|---|
-| **A : ________** | 📊 Data et modèles classiques | Exploration, nettoyage, visualisations, modèles TF-IDF, comparaison finale et choix du modèle | `01` → `03` et `05` (notebooks), `data/processed/*.csv`, `models/model.joblib` |
-| **B : ________** | 🧠 Deep learning et 🌐 Application | Modèles LSTM et DistilBERT (Colab GPU), API, interface web, déploiement | `04_modeles_deep.ipynb`, `models/metrics_deep.csv`, `api/`, `public/`, déploiement Vercel |
+| **A : ________** | 📊 Data et 🧠 modèles | Exploration, nettoyage, visualisations, modèles classiques (TF-IDF) et deep learning (Colab GPU), comparaison finale et choix du modèle | Notebooks `01` → `05`, `data/processed/*.csv.gz`, `models/metrics_*.csv`, `models/model.joblib` |
+| **B : ________** | 🌐 Application | API, interface web, déploiement | `api/`, `public/`, `vercel.json`, déploiement Vercel |
 
 Chacun est **responsable de ses fichiers** : on ne modifie pas le notebook de l'autre sans le prévenir (les notebooks se fusionnent très mal avec Git).
 
 ### Détail des tâches
 
-#### 📊 Personne A : Data et modèles classiques
+#### 📊🧠 Personne A : Data et modèles
 **Données** (`01_exploration.ipynb`, `02_preprocessing.ipynb`)
 - [x] Chargement du dataset et exploration (doublons, longueurs, bruit HTML, sources)
 - [x] Suppression du bruit : entités et balises HTML, publicités, liens, mentions de source
 - [x] Suppression des articles aux catégories contradictoires, des doublons et de la fuite train/test
 - [x] Preprocessing : minuscules, chiffres et ponctuation, stopwords (NLTK + *new*, *year*), lemmatisation
 - [x] Visualisations : mots les plus fréquents et nuages de mots par catégorie
-- [x] Export dans `data/processed/train_clean.csv.gz` et `test_clean.csv.gz` → **à pousser vite, B en a besoin**
+- [x] Export dans `data/processed/train_clean.csv.gz` et `test_clean.csv.gz` → poussé sur `main`
 
 **Modèles classiques** (`03_modeles_classiques.ipynb`)
-- [ ] Vectorisation **TF-IDF**
-- [ ] **Naive Bayes, Régression logistique, SVM linéaire, Random Forest**
-- [ ] Métriques : accuracy, **F1-score macro**, matrices de confusion, temps d'entraînement, taille du modèle
+- [x] Vectorisation **TF-IDF** (unigrammes + bigrammes, 100 000 termes)
+- [x] **Naive Bayes, Régression logistique, SVM linéaire, Random Forest** (hyperparamètres réglés par validation croisée)
+- [x] Métriques : accuracy, **F1-score macro**, matrices de confusion, temps d'entraînement, taille du modèle → `models/metrics_classiques.csv`
+
+**Deep learning** (`04_modeles_deep.ipynb`, sur **Colab GPU**)
+- [x] **LSTM** bidirectionnel (PyTorch, embeddings entraînés sur le corpus)
+- [x] **DistilBERT** fine-tuné (Hugging Face `transformers`)
+- [ ] Exécution complète sur Colab GPU, puis `metrics_deep.csv` à placer dans `models/`
+- [ ] Sauvegarde des modèles deep sur **Google Drive** (trop lourds pour GitHub)
 
 **Comparaison finale** (`05_comparaison.ipynb`)
-- [ ] Tableau et graphiques comparant **tous** les modèles (classiques + `models/metrics_deep.csv` de B)
+- [ ] Tableau et graphiques comparant **tous** les modèles (`models/metrics_classiques.csv` + `models/metrics_deep.csv`)
 - [ ] Choix argumenté du modèle à déployer (compromis performance / légèreté)
 - [ ] Export du modèle retenu (pipeline TF-IDF + classifieur) dans `models/model.joblib`, avec 3 contraintes pour l'API :
   - entraîné sur la colonne **`label_text`** (le modèle renvoie directement « Sports », etc.) ;
   - doit avoir **`predict_proba`** (si c'est le SVM linéaire, l'envelopper dans `CalibratedClassifierCV`) ;
   - **moins de 50 Mo**, exporté avec la même version de scikit-learn que `requirements.txt`.
 
-#### 🧠🌐 Personne B : Deep learning et application
-**Deep learning** (`04_modeles_deep.ipynb`, sur **Colab GPU**)
-- [ ] **LSTM** (embeddings entraînés sur le corpus)
-- [ ] **DistilBERT** fine-tuné
-- [ ] Mêmes métriques que A (accuracy, F1 macro, matrice de confusion, temps, taille), exportées dans `models/metrics_deep.csv`
-- [ ] Sauvegarde des modèles deep sur **Google Drive** (trop lourds pour GitHub)
-
+#### 🌐 Personne B : Application
 **Application** (`api/`, `public/`) : voir le [guide pas à pas](#-guide-de-lapplication-personne-b)
 - [ ] `api/preprocessing.py` : même nettoyage que le notebook 02
 - [ ] API Python (FastAPI) : route `POST /api/predict` qui reçoit un texte et renvoie la catégorie et les probabilités
@@ -93,13 +93,13 @@ Chacun est **responsable de ses fichiers** : on ne modifie pas le notebook de l'
 >
 > Le code de l'API ne change pas quand on remplace ce fichier par le modèle final.
 
-### Format de `models/metrics_deep.csv`
-Pour que A puisse intégrer les résultats de B dans la comparaison, une ligne par modèle :
+### Format des fichiers de métriques
+`models/metrics_classiques.csv` (notebook 03) et `models/metrics_deep.csv` (notebook 04) ont les mêmes colonnes, une ligne par modèle, pour être rassemblés dans le notebook 05 :
 
 ```
 modele,accuracy,f1_macro,temps_entrainement_s,taille_mo
-LSTM,0.00,0.00,0,0
-DistilBERT,0.00,0.00,0,0
+SVM linéaire,0.9119,0.9114,1.7393,7.3599
+...
 ```
 
 ---
@@ -225,8 +225,8 @@ Tester la page et l'API ensemble en local : `npx vercel dev` (nécessite Node.js
 ## 🔗 Comment les parties s'enchaînent
 
 ```
-            Personne A                                   Personne B
-            ──────────                                   ──────────
+                                      Personne A
+                                      ──────────
 01_exploration ──► 02_preprocessing ──► data/processed/*.csv
                                                │
                          ┌─────────────────────┴─────────────────────┐
@@ -239,7 +239,7 @@ Tester la page et l'API ensemble en local : `npx vercel dev` (nécessite Node.js
                                  05_comparaison → models/model.joblib
                                                │
                                                ▼
-                                 api/ (FastAPI) ◄──── public/ (interface)
+                    Personne B : api/ (FastAPI) ◄──── public/ (interface)
                                                │
                                                ▼
                                         Déploiement Vercel
@@ -262,12 +262,12 @@ ag-news-classifier/
 ├── notebook/
 │   ├── 01_exploration.ipynb          ✅ fait
 │   ├── 02_preprocessing.ipynb        ✅ fait
-│   ├── 03_modeles_classiques.ipynb
-│   ├── 04_modeles_deep.ipynb
+│   ├── 03_modeles_classiques.ipynb   ✅ fait
+│   ├── 04_modeles_deep.ipynb         ✅ prêt (à exécuter sur Colab GPU)
 │   └── 05_comparaison.ipynb
 ├── data/
 │   └── processed/            # données nettoyées (train_clean.csv.gz, test_clean.csv.gz)
-├── models/                   # modèle léger déployé (.joblib) + metrics_deep.csv
+├── models/                   # modèle déployé (.joblib) + metrics_classiques.csv + metrics_deep.csv
 ├── api/                      # API FastAPI : index.py, preprocessing.py, nltk_data/
 └── public/                   # interface web : index.html (servie telle quelle par Vercel)
 ```
@@ -337,16 +337,18 @@ pip install -r requirements-dev.txt
 - Vocabulaire réduit de **188 110 à 54 450 mots** (−71 %) après preprocessing
 
 ### Comparaison des modèles
-*À compléter par A (classiques) et B (deep).*
+Évaluation sur le jeu de test (7 425 articles). Taille = vectoriseur TF-IDF + classifieur pour les modèles classiques.
 
 | Modèle | Accuracy | F1 macro | Temps d'entraînement | Taille |
 |---|---|---|---|---|
-| Naive Bayes | | | | |
-| Régression logistique | | | | |
-| SVM linéaire | | | | |
-| Random Forest | | | | |
+| **SVM linéaire** | **0.912** | **0.911** | ~2 s | 7,4 Mo |
+| Régression logistique | 0.910 | 0.909 | ~3 s | 7,4 Mo |
+| Naive Bayes | 0.903 | 0.902 | 0,1 s | 10,6 Mo |
+| Random Forest | 0.891 | 0.890 | ~24 s | 612 Mo |
 | LSTM | | | | |
 | DistilBERT | | | | |
+
+*Temps mesurés sur un Mac (CPU 10 cœurs). LSTM et DistilBERT : à compléter après l'exécution sur Colab GPU.*
 
 ### Application
 *À compléter par B : lien de l'app déployée et captures d'écran.*
