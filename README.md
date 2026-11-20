@@ -34,7 +34,7 @@ Tout le travail de data science est dans **un seul notebook** : [`notebook/AG_Ne
 
 **Ouvrir sur Colab** : [colab.research.google.com/github/Akerman64/ag-news-classifier/blob/main/notebook/AG_News_projet_complet.ipynb](https://colab.research.google.com/github/Akerman64/ag-news-classifier/blob/main/notebook/AG_News_projet_complet.ipynb), puis *Exécution → Modifier le type d'exécution → GPU T4* et *Exécution → Tout exécuter* (environ 30 minutes, surtout pour DistilBERT).
 
-Les notebooks `01` à `04` sont les versions de travail découpées par étape ; le notebook complet les regroupe.
+Le notebook du dépôt contient les sorties et les graphiques de notre exécution sur Colab. Les notebooks `01` à `04` sont les versions de travail découpées par étape ; le notebook complet les regroupe.
 
 ---
 
@@ -44,24 +44,24 @@ Les notebooks `01` à `04` sont les versions de travail découpées par étape ;
 
 | Modèle | Accuracy | F1 macro | Entraînement | Taille |
 |---|---|---|---|---|
-| DistilBERT (fine-tuné) | 0,934 | **0,934** | ~1 h | 268 Mo |
-| SVM linéaire | 0,912 | 0,911 | 2 s | 7,4 Mo |
-| **Régression logistique** ✅ déployée | 0,910 | 0,909 | 3 s | 7,4 Mo |
-| Naive Bayes | 0,903 | 0,902 | 0,2 s | 10,6 Mo |
-| LSTM bidirectionnel | 0,898 | 0,897 | ~3 min | 17 Mo |
-| Random Forest | 0,891 | 0,890 | 25 s | 612 Mo |
+| DistilBERT (fine-tuné) | 0,934 | **0,934** | 9 min | 268 Mo |
+| SVM linéaire | 0,912 | 0,911 | 7 s | 7,4 Mo |
+| **Régression logistique** ✅ déployée | 0,910 | 0,909 | 17 s | 7,4 Mo |
+| Naive Bayes | 0,903 | 0,902 | 0,3 s | 10,6 Mo |
+| LSTM bidirectionnel | 0,892 | 0,892 | 18 s | 17 Mo |
+| Random Forest | 0,891 | 0,890 | 8 min | 612 Mo |
 
-*Temps mesurés sur un Mac (sans GPU NVIDIA) ; sur le GPU de Colab, le deep learning est plus rapide. Taille des modèles classiques = vectoriseur TF-IDF + classifieur.*
+*Résultats de l'exécution du notebook sur Google Colab (GPU T4 pour le LSTM et DistilBERT). Taille des modèles classiques = vectoriseur TF-IDF + classifieur.*
 
 ### Pourquoi on déploie un modèle classique et pas DistilBERT
 
-DistilBERT est le meilleur modèle, mais il ne gagne que **2,2 points de F1** sur les modèles linéaires :
+DistilBERT est le meilleur modèle, mais il ne gagne que **2,3 points de F1** sur les modèles linéaires :
 
 - **Taille** : 268 Mo pour le modèle, plus PyTorch et transformers (~750 Mo installés) → environ **1 Go**, alors que Vercel limite une fonction Python à **500 Mo**. La régression logistique fait 7,4 Mo et l'API complète environ 230 Mo.
-- **Entraînement** : environ une heure contre 3 secondes, ce qui rend chaque réentraînement coûteux.
-- **Réponse** : moins d'1 ms par article contre environ 9 ms pour DistilBERT sur processeur (plus de 10 fois plus lent, mais encore acceptable : ce n'est pas l'argument principal).
+- **Entraînement** : 9 minutes sur GPU (près d'une heure sans GPU) contre quelques secondes, ce qui rend chaque réentraînement coûteux.
+- **Réponse** : environ 3 ms par article contre 83 ms pour DistilBERT sur processeur (26 fois plus lent, mais encore acceptable : ce n'est pas l'argument principal).
 
-Entre les modèles classiques, le SVM est très légèrement meilleur mais ne donne pas de probabilités ; une fois calibré pour en donner, il descend à 0,908 et pèse 13,8 Mo. On déploie donc la **régression logistique** : F1 0,909, probabilités natives, 7,4 Mo.
+Entre les modèles classiques, le SVM est très légèrement meilleur mais ne donne pas de probabilités ; une fois calibré pour en donner, il descend à 0,9085 et pèse 13,8 Mo. On déploie donc la **régression logistique** : F1 0,909, probabilités natives, 7,4 Mo.
 
 ---
 
