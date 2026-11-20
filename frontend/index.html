@@ -160,6 +160,30 @@
             margin-top: 15px;
         }
 
+        .examples {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+            color: #94a3b8;
+            font-size: 13px;
+        }
+
+        .example {
+            padding: 6px 12px;
+            background: transparent;
+            border: 1px solid #475569;
+            color: #cbd5e1;
+            font-weight: normal;
+            font-size: 13px;
+        }
+
+        .example:hover {
+            border-color: #38bdf8;
+            color: #f1f5f9;
+        }
+
         footer {
             text-align: center;
             color: #64748b;
@@ -187,6 +211,7 @@
 
         <textarea
             id="article"
+            maxlength="5000"
             placeholder="Paste your news article here..."
         ></textarea>
 
@@ -207,6 +232,14 @@
                 Effacer
             </button>
 
+        </div>
+
+        <div class="examples">
+            <span>Essayer un exemple :</span>
+            <button class="example" onclick="useExample('Sports')">Sports</button>
+            <button class="example" onclick="useExample('Business')">Business</button>
+            <button class="example" onclick="useExample('Sci/Tech')">Sci/Tech</button>
+            <button class="example" onclick="useExample('World')">World</button>
         </div>
 
         <p id="error" class="error"></p>
@@ -235,7 +268,23 @@
 
 <script>
 
-    const API_URL = "http://127.0.0.1:8000/api/predict";
+    // Même adresse que la page (Vercel, ou uvicorn en local) ;
+    // si la page est ouverte directement depuis le disque (file://), on vise l'API locale.
+    const API_URL = window.location.protocol === "file:"
+        ? "http://127.0.0.1:8000/api/predict"
+        : "/api/predict";
+
+    const EXEMPLES = {
+        "Sports": "Manchester United came back from two goals down to beat Arsenal 3-2 on Sunday, with a late winner from their young striker.",
+        "Business": "Oil prices jumped to a record high on Monday, pushing stocks lower as investors worried about the impact on company earnings.",
+        "Sci/Tech": "Microsoft released a security update for Windows after researchers found a flaw that lets hackers take control of computers.",
+        "World": "The prime minister called for early elections after the coalition government collapsed over the budget dispute."
+    };
+
+    function useExample(name) {
+        document.getElementById("article").value = EXEMPLES[name];
+        classifyArticle();
+    }
 
     async function classifyArticle() {
 
@@ -258,9 +307,11 @@
         button.disabled = true;
         button.textContent = "Classification en cours...";
 
+        let response;
+
         try {
 
-            const response = await fetch(API_URL, {
+            response = await fetch(API_URL, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -270,21 +321,33 @@
                 })
             });
 
+        } catch (err) {
+
+            // L'API ne répond pas du tout (serveur arrêté, pas de réseau)
+            error.textContent =
+                "Impossible de joindre l'API. Vérifiez qu'elle est démarrée.";
+            button.disabled = false;
+            button.textContent = "Classifier l'article";
+            return;
+        }
+
+        try {
+
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(
-                    data.detail || "Une erreur est survenue."
-                );
+                // FastAPI renvoie soit un message (400), soit une liste d'erreurs de validation (422)
+                const detail = Array.isArray(data.detail)
+                    ? data.detail.map(d => d.msg).join(" ")
+                    : data.detail;
+                throw new Error(detail || "Une erreur est survenue.");
             }
 
             displayResults(data);
 
         } catch (err) {
 
-            error.textContent =
-                "Erreur : " + err.message +
-                ". Vérifiez que l'API est démarrée.";
+            error.textContent = "Erreur : " + err.message;
 
         } finally {
 

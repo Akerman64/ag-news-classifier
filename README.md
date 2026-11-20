@@ -1,8 +1,10 @@
 # 📰 AG News Classifier
 
-Projet de data science IPSSI : une **web app qui classe automatiquement un article de presse** dans l'une des 4 catégories suivantes : **World, Sports, Business, Sci/Tech**.
+Projet de data science IPSSI : une **web app qui classe automatiquement un article de presse** dans l'une des 4 catégories **World, Sports, Business, Sci/Tech**.
 
-L'utilisateur colle un texte dans l'interface, l'API interroge le modèle NLP et renvoie la catégorie prédite.
+L'utilisateur colle un texte en anglais dans l'interface, l'API le nettoie, interroge le modèle et renvoie la catégorie prédite avec la probabilité de chaque catégorie.
+
+🔗 **Application en ligne** : *lien Vercel à ajouter après le déploiement*
 
 ## 📌 Le projet en bref
 
@@ -11,241 +13,99 @@ L'utilisateur colle un texte dans l'interface, l'API interroge le modèle NLP et
 | **Thématique** | Classification automatique d'articles de presse (2004-2005) selon leur rubrique |
 | **Dataset** | [AG News](https://huggingface.co/datasets/fancyzhx/ag_news) : titre + chapeau d'articles en anglais |
 | **Observations** | **127 600 articles** bruts → **125 759** après nettoyage (118 334 train / 7 425 test) |
-| **Catégories** | **4**, équilibrées (≈ 25 % chacune) : Sports (31 700), World (31 635), Business (31 481), Sci/Tech (30 943) |
-| **Type de tâche** | Classification de texte multi-classes (apprentissage supervisé) |
+| **Catégories** | **4**, équilibrées (≈ 25 % chacune) |
+| **Modèle déployé** | TF-IDF + régression logistique : **F1 macro 0,909**, 7,4 Mo |
+| **Stack** | pandas, NLTK, scikit-learn, PyTorch, transformers · FastAPI · HTML/JS · Vercel |
 
 ---
 
-## 🎯 Objectifs
+## 📓 Le notebook
 
-1. Trouver un dataset de textes catégorisés → **AG News** (Hugging Face : [`fancyzhx/ag_news`](https://huggingface.co/datasets/fancyzhx/ag_news))
-2. Explorer, nettoyer et visualiser les données
-3. Entraîner **plusieurs modèles NLP** et les comparer (métriques et graphes)
-4. Choisir le modèle à déployer : **le plus léger** parmi les plus performants
-5. Créer une **API** qui sert le modèle
-6. Créer une **interface web** pour tester la classification
-7. **Déployer** gratuitement (Vercel) pour qu'un tiers puisse tester
+Tout le travail de data science est dans **un seul notebook** : [`notebook/AG_News_projet_complet.ipynb`](notebook/AG_News_projet_complet.ipynb)
 
----
+1. Exploration : doublons, longueurs, bruit HTML, sources
+2. Nettoyage et preprocessing : suppression du bruit, des doublons et de la fuite train/test, stopwords, lemmatisation
+3. Modèles classiques (TF-IDF) : Naive Bayes, régression logistique, SVM linéaire, Random Forest
+4. Deep learning : LSTM bidirectionnel et DistilBERT
+5. Comparaison de tous les modèles et choix du modèle déployé
+6. Export du modèle et test sur de nouveaux textes
 
-## 👥 Équipe et répartition
+**Ouvrir sur Colab** : [colab.research.google.com/github/Akerman64/ag-news-classifier/blob/main/notebook/AG_News_projet_complet.ipynb](https://colab.research.google.com/github/Akerman64/ag-news-classifier/blob/main/notebook/AG_News_projet_complet.ipynb), puis *Exécution → Modifier le type d'exécution → GPU T4* et *Exécution → Tout exécuter* (environ 30 minutes, surtout pour DistilBERT).
 
-> ✏️ Remplacez A et B par vos prénoms.
-
-| Personne | Rôle | Responsabilités | Livrables |
-|---|---|---|---|
-| **A : ________** | 📊 Data et 🧠 modèles | Exploration, nettoyage, visualisations, modèles classiques (TF-IDF) et deep learning (Colab GPU), comparaison finale et choix du modèle | Notebooks `01` → `05`, `data/processed/*.csv.gz`, `models/metrics_*.csv`, `models/model.joblib` |
-| **B : ________** | 🌐 Application | API, interface web, déploiement | `api/`, `public/`, `vercel.json`, déploiement Vercel |
-
-Chacun est **responsable de ses fichiers** : on ne modifie pas le notebook de l'autre sans le prévenir (les notebooks se fusionnent très mal avec Git).
-
-### Détail des tâches
-
-#### 📊🧠 Personne A : Data et modèles
-**Données** (`01_exploration.ipynb`, `02_preprocessing.ipynb`)
-- [x] Chargement du dataset et exploration (doublons, longueurs, bruit HTML, sources)
-- [x] Suppression du bruit : entités et balises HTML, publicités, liens, mentions de source
-- [x] Suppression des articles aux catégories contradictoires, des doublons et de la fuite train/test
-- [x] Preprocessing : minuscules, chiffres et ponctuation, stopwords (NLTK + *new*, *year*), lemmatisation
-- [x] Visualisations : mots les plus fréquents et nuages de mots par catégorie
-- [x] Export dans `data/processed/train_clean.csv.gz` et `test_clean.csv.gz` → poussé sur `main`
-
-**Modèles classiques** (`03_modeles_classiques.ipynb`)
-- [x] Vectorisation **TF-IDF** (unigrammes + bigrammes, 100 000 termes)
-- [x] **Naive Bayes, Régression logistique, SVM linéaire, Random Forest** (hyperparamètres réglés par validation croisée)
-- [x] Métriques : accuracy, **F1-score macro**, matrices de confusion, temps d'entraînement, taille du modèle → `models/metrics_classiques.csv`
-
-**Deep learning** (`04_modeles_deep.ipynb`, sur **Colab GPU**)
-- [x] **LSTM** bidirectionnel (PyTorch, embeddings entraînés sur le corpus)
-- [x] **DistilBERT** fine-tuné (Hugging Face `transformers`)
-- [ ] Exécution complète sur Colab GPU, puis `metrics_deep.csv` à placer dans `models/`
-- [ ] Sauvegarde des modèles deep sur **Google Drive** (trop lourds pour GitHub)
-
-**Comparaison finale** (`05_comparaison.ipynb`)
-- [ ] Tableau et graphiques comparant **tous** les modèles (`models/metrics_classiques.csv` + `models/metrics_deep.csv`)
-- [ ] Choix argumenté du modèle à déployer (compromis performance / légèreté)
-- [ ] Export du modèle retenu (pipeline TF-IDF + classifieur) dans `models/model.joblib`, avec 3 contraintes pour l'API :
-  - entraîné sur la colonne **`label_text`** (le modèle renvoie directement « Sports », etc.) ;
-  - doit avoir **`predict_proba`** (si c'est le SVM linéaire, l'envelopper dans `CalibratedClassifierCV`) ;
-  - **moins de 50 Mo**, exporté avec la même version de scikit-learn que `requirements.txt`.
-
-#### 🌐 Personne B : Application
-**Application** (`api/`, `public/`) : voir le [guide pas à pas](#-guide-de-lapplication-personne-b)
-- [ ] `api/preprocessing.py` : même nettoyage que le notebook 02
-- [ ] API Python (FastAPI) : route `POST /api/predict` qui reçoit un texte et renvoie la catégorie et les probabilités
-- [ ] Interface web `public/index.html` : zone de texte, bouton « Classer », affichage du résultat et des probabilités
-- [ ] Déploiement sur **Vercel** et test avec un tiers
-- [ ] Mise à jour du README (lien de l'app, captures d'écran)
-
-> 💡 B peut commencer l'API **dès le début**, avec un modèle provisoire, puis le remplacer par `models/model.joblib` quand A l'a exporté. Modèle provisoire (à lancer depuis la racine du dépôt, quelques secondes, ~3,5 Mo) :
->
-> ```python
-> import pandas as pd, joblib
-> from sklearn.pipeline import make_pipeline
-> from sklearn.feature_extraction.text import TfidfVectorizer
-> from sklearn.linear_model import LogisticRegression
->
-> train = pd.read_csv("data/processed/train_clean.csv.gz").dropna(subset=["text_clean"])
-> modele = make_pipeline(TfidfVectorizer(max_features=50000), LogisticRegression(max_iter=1000))
-> modele.fit(train["text_clean"], train["label_text"])
-> joblib.dump(modele, "models/model.joblib")
-> ```
->
-> Le code de l'API ne change pas quand on remplace ce fichier par le modèle final.
-
-### Format des fichiers de métriques
-`models/metrics_classiques.csv` (notebook 03) et `models/metrics_deep.csv` (notebook 04) ont les mêmes colonnes, une ligne par modèle, pour être rassemblés dans le notebook 05 :
-
-```
-modele,accuracy,f1_macro,temps_entrainement_s,taille_mo
-SVM linéaire,0.9119,0.9114,1.7393,7.3599
-...
-```
+Les notebooks `01` à `04` sont les versions de travail découpées par étape ; le notebook complet les regroupe.
 
 ---
 
-## 🌐 Guide de l'application (Personne B)
+## 📊 Résultats
 
-### Architecture
+Évaluation sur le jeu de test (7 425 articles jamais vus pendant l'entraînement).
+
+| Modèle | Accuracy | F1 macro | Entraînement | Taille |
+|---|---|---|---|---|
+| DistilBERT (fine-tuné) | 0,934 | **0,934** | ~1 h | 268 Mo |
+| SVM linéaire | 0,912 | 0,911 | 2 s | 7,4 Mo |
+| **Régression logistique** ✅ déployée | 0,910 | 0,909 | 3 s | 7,4 Mo |
+| Naive Bayes | 0,903 | 0,902 | 0,2 s | 10,6 Mo |
+| LSTM bidirectionnel | 0,898 | 0,897 | ~3 min | 17 Mo |
+| Random Forest | 0,891 | 0,890 | 25 s | 612 Mo |
+
+*Temps mesurés sur un Mac (sans GPU NVIDIA) ; sur le GPU de Colab, le deep learning est plus rapide. Taille des modèles classiques = vectoriseur TF-IDF + classifieur.*
+
+### Pourquoi on déploie un modèle classique et pas DistilBERT
+
+DistilBERT est le meilleur modèle, mais il ne gagne que **2,2 points de F1** sur les modèles linéaires :
+
+- **Taille** : 268 Mo pour le modèle, plus PyTorch et transformers (~750 Mo installés) → environ **1 Go**, alors que Vercel limite une fonction Python à **500 Mo**. La régression logistique fait 7,4 Mo et l'API complète environ 230 Mo.
+- **Entraînement** : environ une heure contre 3 secondes, ce qui rend chaque réentraînement coûteux.
+- **Réponse** : moins d'1 ms par article contre environ 9 ms pour DistilBERT sur processeur (plus de 10 fois plus lent, mais encore acceptable : ce n'est pas l'argument principal).
+
+Entre les modèles classiques, le SVM est très légèrement meilleur mais ne donne pas de probabilités ; une fois calibré pour en donner, il descend à 0,908 et pèse 13,8 Mo. On déploie donc la **régression logistique** : F1 0,909, probabilités natives, 7,4 Mo.
+
+---
+
+## 🌐 L'application
 
 ```
-Navigateur ──► public/index.html            (page statique servie par Vercel)
-                    │  fetch POST /api/predict   {"text": "..."}
+Navigateur ──► frontend/index.html          (page web, servie à la racine /)
+                    │  POST /api/predict   {"text": "..."}
                     ▼
-               api/index.py                 (FastAPI = fonction serverless Python sur Vercel)
-                    │  supprimer_bruit() → preprocesser() → model.predict_proba()
+               api/index.py                 (FastAPI)
+                    │  supprimer_bruit() → preprocesser() → predict_proba()
                     ▼
-               models/model.joblib          (pipeline TF-IDF + classifieur exporté par A)
+               models/model.joblib          (TF-IDF + régression logistique)
 ```
 
-Tout est dans **un seul dépôt et un seul projet Vercel** : la page et l'API ont la même adresse, donc pas de problème de CORS.
+- `api/preprocessing.py` reprend **exactement** le nettoyage du notebook : le modèle doit recevoir le texte sous la même forme qu'à l'entraînement.
+- `api/nltk_data/` contient les stopwords et WordNet, versionnés dans le dépôt car Vercel ne permet pas de télécharger dans le dossier du projet.
+- `entrainer_modele.py` régénère `models/model.joblib` avec la version de scikit-learn de `requirements.txt`.
 
-### Étape 1 : reproduire le preprocessing (`api/preprocessing.py`)
+### Lancer l'application en local
 
-⚠️ **Point le plus important.** Le modèle a appris sur la colonne `text_clean`. L'API doit transformer le texte de l'utilisateur **exactement de la même façon**, sinon les prédictions seront mauvaises.
-
-- Copier depuis `02_preprocessing.ipynb` les fonctions `supprimer_bruit`, `lemmatiser`, `preprocesser` et la liste `stop_words` (stopwords NLTK **+ `new` et `year`**).
-- Les données NLTK (stopwords, wordnet) sont téléchargées une fois et **commitées** dans le dépôt, pour ne pas les télécharger à chaque démarrage sur Vercel :
-  ```bash
-  python -c "import nltk; nltk.download(['stopwords', 'wordnet'], download_dir='api/nltk_data')"
-  ```
-- En haut de `preprocessing.py` :
-  ```python
-  from pathlib import Path
-  import nltk
-  nltk.data.path.insert(0, str(Path(__file__).parent / "nltk_data"))
-  ```
-
-### Étape 2 : l'API (`api/index.py`)
-
-```python
-import sys
-from pathlib import Path
-
-import joblib
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
-
-sys.path.append(str(Path(__file__).parent))
-from preprocessing import supprimer_bruit, preprocesser
-
-RACINE = Path(__file__).resolve().parent.parent
-modele = joblib.load(RACINE / "models" / "model.joblib")   # chargé une seule fois
-
-app = FastAPI(title="AG News Classifier")
-
-
-class Requete(BaseModel):
-    text: str = Field(min_length=1, max_length=5000)
-
-
-@app.get("/api/health")
-def health():
-    return {"status": "ok"}
-
-
-@app.post("/api/predict")
-def predict(requete: Requete):
-    texte = preprocesser(supprimer_bruit(requete.text))
-    if not texte:
-        raise HTTPException(400, "Texte trop court ou sans mot porteur de sens.")
-    probas = modele.predict_proba([texte])[0]
-    resultats = dict(zip(modele.classes_, probas.round(4).tolist()))
-    return {"categorie": max(resultats, key=resultats.get), "probabilites": resultats}
-```
-
-Tester en local :
 ```bash
+git clone https://github.com/Akerman64/ag-news-classifier.git
+cd ag-news-classifier
+python3 -m venv .venv
+source .venv/bin/activate          # Windows : .venv\Scripts\activate
 pip install -r requirements-dev.txt
 uvicorn api.index:app --reload
 ```
-puis ouvrir **http://127.0.0.1:8000/docs** : Swagger permet d'essayer `/api/predict` directement dans le navigateur.
 
-### Étape 3 : l'interface (`public/index.html`)
+Puis ouvrir **http://127.0.0.1:8000** (l'interface) ou **http://127.0.0.1:8000/docs** (documentation interactive de l'API).
 
-Une seule page HTML + CSS + JavaScript, sans framework :
-- une zone de texte, un bouton « Classer » et quelques exemples d'articles cliquables ;
-- l'appel à l'API :
-  ```javascript
-  const reponse = await fetch("/api/predict", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text: zoneTexte.value }),
-  });
-  const { categorie, probabilites } = await reponse.json();
-  ```
-- l'affichage de la catégorie prédite et d'une barre par catégorie pour les probabilités ;
-- un message d'erreur si l'API renvoie une erreur (texte vide, etc.).
-
-Tester la page et l'API ensemble en local : `npx vercel dev` (nécessite Node.js), puis ouvrir http://localhost:3000.
-
-### Étape 4 : déploiement sur Vercel
-
-1. Ajouter à la racine **`vercel.json`**, qui envoie toutes les routes `/api/...` vers FastAPI :
-   ```json
-   { "rewrites": [{ "source": "/api/(.*)", "destination": "/api/index" }] }
-   ```
-2. Ajouter à la racine **`.vercelignore`**, pour ne pas envoyer les notebooks et les données :
-   ```
-   notebook/
-   data/
-   .venv/
-   ```
-3. Sur [vercel.com](https://vercel.com) : *Sign up with GitHub* → **Add New → Project** → importer le dépôt `ag-news-classifier` → *Framework Preset* : **Other** → **Deploy**.
-4. Vercel installe `requirements.txt` (uniquement les dépendances de l'API) et donne une URL du type `https://ag-news-classifier.vercel.app`.
-5. Chaque `push` sur `main` redéploie automatiquement ; chaque Pull Request reçoit une URL de prévisualisation.
-6. Vérifier : `curl -X POST https://<url>/api/predict -H "Content-Type: application/json" -d '{"text": "Apple unveils its new iPhone"}'`
-
-⚠️ **Limites de Vercel** (offre gratuite) :
-- l'ensemble des dépendances Python doit faire **moins de 250 Mo** : c'est pour cela que `requirements.txt` ne contient que l'API (pas de pandas, jupyter, torch…) et qu'on déploie un modèle classique léger ;
-- en cas de dépassement ou d'erreur au déploiement, solution de repli gratuite : **Render** ou **Hugging Face Spaces**.
-
----
-
-## 🔗 Comment les parties s'enchaînent
-
-```
-                                      Personne A
-                                      ──────────
-01_exploration ──► 02_preprocessing ──► data/processed/*.csv
-                                               │
-                         ┌─────────────────────┴─────────────────────┐
-                         ▼                                           ▼
-              03_modeles_classiques                      04_modeles_deep (Colab GPU)
-                         │                                           │
-                         │                                 models/metrics_deep.csv
-                         └─────────────────────┬─────────────────────┘
-                                               ▼
-                                 05_comparaison → models/model.joblib
-                                               │
-                                               ▼
-                    Personne B : api/ (FastAPI) ◄──── public/ (interface)
-                                               │
-                                               ▼
-                                        Déploiement Vercel
+Exemple d'appel :
+```bash
+curl -X POST http://127.0.0.1:8000/api/predict \
+     -H "Content-Type: application/json" \
+     -d '{"text": "Microsoft released a security update for Windows."}'
+# {"categorie":"Sci/Tech","probabilites":{"Business":0.01,"Sci/Tech":0.98,"Sports":0.0,"World":0.01}}
 ```
 
-Chaque notebook **sauvegarde son résultat dans un fichier** que le suivant recharge : personne n'a besoin d'exécuter le notebook d'un autre pour avancer.
+### Déployer sur Vercel
+
+1. Sur [vercel.com](https://vercel.com) : *Sign up with GitHub* → **Add New → Project** → importer `ag-news-classifier`.
+2. *Framework Preset* : **Other**, rien d'autre à configurer → **Deploy**.
+3. Vercel détecte FastAPI, lit `pyproject.toml` (`[tool.vercel] entrypoint = "api.index:app"`) et déploie l'application comme une seule fonction Python. Il n'installe que les dépendances de l'API, et copie la page `frontend/` sur son CDN. `.vercelignore` exclut les notebooks et les données.
+4. Chaque `push` sur `main` redéploie automatiquement.
 
 ---
 
@@ -253,112 +113,38 @@ Chaque notebook **sauvegarde son résultat dans un fichier** que le suivant rech
 
 ```
 ag-news-classifier/
-├── README.md
-├── requirements.txt          # dépendances de l'API (installées par Vercel)
-├── requirements-dev.txt      # dépendances des notebooks (en local)
-├── vercel.json               # configuration du déploiement (à créer par B)
-├── .vercelignore             # fichiers à ne pas déployer (à créer par B)
-├── .gitignore
 ├── notebook/
-│   ├── 01_exploration.ipynb          ✅ fait
-│   ├── 02_preprocessing.ipynb        ✅ fait
-│   ├── 03_modeles_classiques.ipynb   ✅ fait
-│   ├── 04_modeles_deep.ipynb         ✅ prêt (à exécuter sur Colab GPU)
-│   └── 05_comparaison.ipynb
-├── data/
-│   └── processed/            # données nettoyées (train_clean.csv.gz, test_clean.csv.gz)
-├── models/                   # modèle déployé (.joblib) + metrics_classiques.csv + metrics_deep.csv
-├── api/                      # API FastAPI : index.py, preprocessing.py, nltk_data/
-└── public/                   # interface web : index.html (servie telle quelle par Vercel)
+│   ├── AG_News_projet_complet.ipynb   # tout le projet data science (à ouvrir sur Colab)
+│   └── 01_… à 04_…ipynb               # versions de travail, étape par étape
+├── data/processed/                    # données nettoyées (train/test .csv.gz)
+├── models/
+│   ├── model.joblib                   # modèle déployé (TF-IDF + régression logistique)
+│   └── metrics_classiques.csv
+├── api/
+│   ├── index.py                       # API FastAPI (/api/predict, /api/health)
+│   ├── preprocessing.py               # même nettoyage que le notebook
+│   └── nltk_data/                     # stopwords + WordNet
+├── frontend/index.html                # interface web (servie par app.frontend)
+├── entrainer_modele.py                # régénère models/model.joblib
+├── pyproject.toml, .vercelignore      # déploiement Vercel (point d'entrée de l'API)
+├── requirements.txt                   # dépendances de l'API (identiques à pyproject.toml)
+└── requirements-dev.txt               # dépendances notebooks + serveur local
 ```
-
-> ⚠️ Les modèles deep learning (LSTM, DistilBERT) sont trop lourds pour GitHub : ils restent sur **Google Drive** (dossier partagé de l'équipe). Seul le modèle léger déployé va dans `models/`.
 
 ---
 
-## 🚀 Démarrer
+## 👥 Équipe
 
-### 1. Récupérer le projet
+| | Rôle |
+|---|---|
+| **Personne A** | Données (exploration, nettoyage), modèles classiques et deep learning, comparaison et choix du modèle |
+| **Personne B** | API FastAPI, interface web, déploiement |
+
+### Travailler avec Git
+
 ```bash
-git clone https://github.com/Akerman64/ag-news-classifier.git
-cd ag-news-classifier
+git checkout main && git pull          # partir de la dernière version
+git checkout -b ma-branche             # une branche par sujet
+git add … && git commit -m "…"         # messages clairs, en français
+git push -u origin ma-branche          # puis Pull Request vers main
 ```
-
-### 2. Installer les dépendances (en local)
-```bash
-python3 -m venv .venv
-source .venv/bin/activate        # Windows : .venv\Scripts\activate
-pip install -r requirements-dev.txt
-```
-
-### 3. Ouvrir un notebook
-- **En local** : `jupyter notebook` puis ouvrir le dossier `notebook/`
-- **Sur Colab** : remplacer `github.com` par `colab.research.google.com/github` dans l'URL du notebook sur GitHub.
-  Pour les modèles deep : *Exécution → Modifier le type d'exécution → GPU T4*.
-
----
-
-## 🔄 Règles de travail avec Git
-
-1. **Toujours récupérer la dernière version avant de commencer** :
-   ```bash
-   git checkout main
-   git pull
-   ```
-2. **Travailler sur sa propre branche** (jamais directement sur `main`) :
-   ```bash
-   git checkout -b preprocessing      # ou modeles, api, interface...
-   ```
-3. **Enregistrer régulièrement son travail** :
-   ```bash
-   git add notebook/02_preprocessing.ipynb
-   git commit -m "Nettoyage : suppression des doublons et des stopwords"
-   git push -u origin preprocessing
-   ```
-4. **Ouvrir une Pull Request** sur GitHub vers `main` ; l'autre membre relit avant la fusion.
-5. **Depuis Colab** : *Fichier → Enregistrer une copie dans GitHub*, en choisissant **sa branche**.
-
-✅ Bonnes pratiques :
-- Un notebook = un responsable.
-- Des messages de commit clairs, en français.
-- Ne jamais pousser de gros fichiers (> 50 Mo) ni de clés ou mots de passe.
-- Suivre l'avancement avec les **Issues** GitHub (une issue par tâche, assignée à la bonne personne).
-
----
-
-## 📊 Résultats
-
-### Exploration et preprocessing (fait)
-- **127 600 articles**, 4 catégories **parfaitement équilibrées** (30 000 par catégorie en train)
-- Textes courts : **37 mots** en médiane (titre + chapeau)
-- Bruit important : entités HTML dans 25 % des articles, mentions de source dans 13 %, publicités HTML
-- Certaines sources sont liées à une seule catégorie (*Canadian Press* → 100 % World) → mentions supprimées
-- **1 841 articles retirés** (catégories contradictoires, doublons, 156 articles communs train/test) → **125 759** au final
-- Vocabulaire réduit de **188 110 à 54 450 mots** (−71 %) après preprocessing
-
-### Comparaison des modèles
-Évaluation sur le jeu de test (7 425 articles). Taille = vectoriseur TF-IDF + classifieur pour les modèles classiques.
-
-| Modèle | Accuracy | F1 macro | Temps d'entraînement | Taille |
-|---|---|---|---|---|
-| **SVM linéaire** | **0.912** | **0.911** | ~2 s | 7,4 Mo |
-| Régression logistique | 0.910 | 0.909 | ~3 s | 7,4 Mo |
-| Naive Bayes | 0.903 | 0.902 | 0,1 s | 10,6 Mo |
-| Random Forest | 0.891 | 0.890 | ~24 s | 612 Mo |
-| LSTM | | | | |
-| DistilBERT | | | | |
-
-*Temps mesurés sur un Mac (CPU 10 cœurs). LSTM et DistilBERT : à compléter après l'exécution sur Colab GPU.*
-
-### Application
-*À compléter par B : lien de l'app déployée et captures d'écran.*
-
----
-
-## 🛠️ Stack technique
-
-- **Données et ML** : pandas, scikit-learn, NLTK, Hugging Face `datasets` / `transformers`, PyTorch
-- **Visualisation** : matplotlib, seaborn, wordcloud
-- **API** : FastAPI
-- **Déploiement** : Vercel
-- **Collaboration** : GitHub, Google Colab, Google Drive

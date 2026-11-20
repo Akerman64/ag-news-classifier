@@ -1,7 +1,8 @@
-# Dépendances de l'APPLICATION (installées par Vercel au déploiement) : à garder légères.
+# Dépendances de l'APPLICATION (installées par Vercel au déploiement) : à garder légères
+# et identiques à la liste "dependencies" de pyproject.toml.
 # scikit-learn doit être à la MÊME version que celle utilisée pour exporter models/model.joblib.
-fastapi
+fastapi==0.165.0
 scikit-learn==1.8.0
-numpy
-joblib
-nltk
+numpy==2.4.6
+joblib==1.6.0
+nltk==3.10.4

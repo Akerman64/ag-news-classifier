@@ -1,13 +1,11 @@
-
 import sys
 from pathlib import Path
 
 import joblib
 
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
-from pydantic import BaseModel, Field, field_validator
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field, field_validator
 
 # ============================================================
 # 1. CONFIGURATION DES CHEMINS
@@ -184,3 +182,14 @@ def predict(requete: Requete):
             status_code=500,
             detail="Une erreur interne est survenue pendant la classification."
         )
+
+
+# ============================================================
+# 7. INTERFACE WEB
+# ============================================================
+
+# La page frontend/index.html est servie à la racine "/".
+# Les routes /api/... restent prioritaires sur les fichiers de l'interface.
+# Sur Vercel, ces fichiers sont copiés sur le CDN au déploiement ;
+# en local (uvicorn api.index:app), c'est FastAPI qui les sert.
+app.frontend("/", directory=ROOT_DIR / "frontend")

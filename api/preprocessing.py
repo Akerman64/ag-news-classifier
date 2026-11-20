@@ -16,16 +16,22 @@ from nltk.stem import WordNetLemmatizer
 
 API_DIR = Path(__file__).resolve().parent
 
+# Ressources NLTK versionnées dans le dépôt (stopwords + wordnet) :
+# sur Vercel, le dossier du projet est en lecture seule, on ne peut pas y télécharger.
 NLTK_DIR = API_DIR / "nltk_data"
+
+# Dossier de secours inscriptible (seul /tmp l'est sur Vercel)
+NLTK_DIR_SECOURS = Path("/tmp/nltk_data")
 
 # Indiquer à NLTK où chercher ses ressources
 nltk.data.path.insert(0, str(NLTK_DIR))
+nltk.data.path.append(str(NLTK_DIR_SECOURS))
 
 
 def verifier_ressource(chemin, package):
     """
     Vérifie si une ressource NLTK existe.
-    Si elle manque, elle est téléchargée automatiquement.
+    Si elle manque, elle est téléchargée automatiquement dans /tmp.
     """
     try:
         nltk.data.find(chemin)
@@ -35,7 +41,7 @@ def verifier_ressource(chemin, package):
 
         succes = nltk.download(
             package,
-            download_dir=str(NLTK_DIR),
+            download_dir=str(NLTK_DIR_SECOURS),
             quiet=True
         )
 
