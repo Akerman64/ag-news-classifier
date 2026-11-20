@@ -34,7 +34,7 @@ Tout le travail de data science est dans **un seul notebook** : [`notebook/AG_Ne
 
 **Ouvrir sur Colab** : [colab.research.google.com/github/Akerman64/ag-news-classifier/blob/main/notebook/AG_News_projet_complet.ipynb](https://colab.research.google.com/github/Akerman64/ag-news-classifier/blob/main/notebook/AG_News_projet_complet.ipynb), puis *Exécution → Modifier le type d'exécution → GPU T4* et *Exécution → Tout exécuter* (environ 30 minutes, surtout pour DistilBERT).
 
-Le notebook du dépôt contient les sorties et les graphiques de notre exécution sur Colab. Les notebooks `01` à `04` sont les versions de travail découpées par étape ; le notebook complet les regroupe.
+Le notebook du dépôt contient les sorties et les graphiques de notre exécution sur Colab. Il télécharge lui-même AG News depuis Hugging Face : aucun fichier de données n'est nécessaire.
 
 ---
 
@@ -79,7 +79,7 @@ Navigateur ──► frontend/index.html          (page web, servie à la racine
 
 - `api/preprocessing.py` reprend **exactement** le nettoyage du notebook : le modèle doit recevoir le texte sous la même forme qu'à l'entraînement.
 - `api/nltk_data/` contient les stopwords et WordNet, versionnés dans le dépôt car Vercel ne permet pas de télécharger dans le dossier du projet.
-- `entrainer_modele.py` régénère `models/model.joblib` avec la version de scikit-learn de `requirements.txt`.
+- `models/model.joblib` est exporté par la partie 7 du notebook. Pour le régénérer, il faut la même version de scikit-learn que `requirements.txt` (1.8.0), sinon l'API risque de ne pas pouvoir le charger.
 
 ### Lancer l'application en local
 
@@ -88,7 +88,7 @@ git clone https://github.com/Akerman64/ag-news-classifier.git
 cd ag-news-classifier
 python3 -m venv .venv
 source .venv/bin/activate          # Windows : .venv\Scripts\activate
-pip install -r requirements-dev.txt
+pip install -r requirements.txt uvicorn
 uvicorn api.index:app --reload
 ```
 
@@ -105,8 +105,8 @@ curl -X POST http://127.0.0.1:8000/api/predict \
 ### Déployer sur Vercel
 
 1. Sur [vercel.com](https://vercel.com) : *Sign up with GitHub* → **Add New → Project** → importer `ag-news-classifier`.
-2. *Framework Preset* : **Other**, rien d'autre à configurer → **Deploy**.
-3. Vercel détecte FastAPI, lit `pyproject.toml` (`[tool.vercel] entrypoint = "api.index:app"`) et déploie l'application comme une seule fonction Python. Il n'installe que les dépendances de l'API, et copie la page `frontend/` sur son CDN. `.vercelignore` exclut les notebooks et les données.
+2. *Framework Preset* : **FastAPI** (détecté automatiquement), rien d'autre à configurer → **Deploy**.
+3. Vercel détecte FastAPI, lit `pyproject.toml` (`[tool.vercel] entrypoint = "api.index:app"`) et déploie l'application comme une seule fonction Python. Il n'installe que les dépendances de l'API, et copie la page `frontend/` sur son CDN. `.vercelignore` exclut le notebook.
 4. Chaque `push` sur `main` redéploie automatiquement.
 
 ---
@@ -116,21 +116,16 @@ curl -X POST http://127.0.0.1:8000/api/predict \
 ```
 ag-news-classifier/
 ├── notebook/
-│   ├── AG_News_projet_complet.ipynb   # tout le projet data science (à ouvrir sur Colab)
-│   └── 01_… à 04_…ipynb               # versions de travail, étape par étape
-├── data/processed/                    # données nettoyées (train/test .csv.gz)
+│   └── AG_News_projet_complet.ipynb   # tout le projet data science (à ouvrir sur Colab)
 ├── models/
-│   ├── model.joblib                   # modèle déployé (TF-IDF + régression logistique)
-│   └── metrics_classiques.csv
+│   └── model.joblib                   # modèle déployé (TF-IDF + régression logistique)
 ├── api/
 │   ├── index.py                       # API FastAPI (/api/predict, /api/health)
 │   ├── preprocessing.py               # même nettoyage que le notebook
 │   └── nltk_data/                     # stopwords + WordNet
 ├── frontend/index.html                # interface web (servie par app.frontend)
-├── entrainer_modele.py                # régénère models/model.joblib
 ├── pyproject.toml, .vercelignore      # déploiement Vercel (point d'entrée de l'API)
-├── requirements.txt                   # dépendances de l'API (identiques à pyproject.toml)
-└── requirements-dev.txt               # dépendances notebooks + serveur local
+└── requirements.txt                   # dépendances de l'API (identiques à pyproject.toml)
 ```
 
 ---

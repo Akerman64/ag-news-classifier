@@ -1,7 +1,3 @@
 notebook/
-data/
 .venv/
 venv/
-entrainer_modele.py
-requirements-dev.txt
-models/metrics_*.csv
