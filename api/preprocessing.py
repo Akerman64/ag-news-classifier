@@ -1,6 +1,7 @@
 
 import re
 import html
+import tempfile
 
 from pathlib import Path
 from functools import lru_cache
@@ -16,39 +17,52 @@ from nltk.stem import WordNetLemmatizer
 
 API_DIR = Path(__file__).resolve().parent
 
-# Ressources NLTK versionnées dans le dépôt (stopwords + wordnet) :
+# Ressources NLTK versionnées dans le dépôt (stopwords + wordnet.zip) :
 # sur Vercel, le dossier du projet est en lecture seule, on ne peut pas y télécharger.
 NLTK_DIR = API_DIR / "nltk_data"
 
-# Dossier de secours inscriptible (seul /tmp l'est sur Vercel)
-NLTK_DIR_SECOURS = Path("/tmp/nltk_data")
-
 # Indiquer à NLTK où chercher ses ressources
 nltk.data.path.insert(0, str(NLTK_DIR))
-nltk.data.path.append(str(NLTK_DIR_SECOURS))
+
+
+def ressource_presente(chemin):
+    """
+    True si NLTK trouve la ressource, dézippée (corpora/wordnet)
+    ou sous forme de zip (corpora/wordnet.zip), que NLTK sait lire directement.
+    """
+    for nom in (chemin, chemin + ".zip"):
+        try:
+            nltk.data.find(nom)
+            return True
+        except LookupError:
+            pass
+    return False
 
 
 def verifier_ressource(chemin, package):
     """
     Vérifie si une ressource NLTK existe.
-    Si elle manque, elle est téléchargée automatiquement dans /tmp.
+    Si elle manque (cas anormal), elle est téléchargée dans un dossier
+    temporaire privé (seul /tmp est inscriptible sur Vercel).
     """
-    try:
-        nltk.data.find(chemin)
+    if ressource_presente(chemin):
+        return
 
-    except LookupError:
-        print(f"Téléchargement de la ressource NLTK : {package}")
+    print(f"Téléchargement de la ressource NLTK : {package}")
 
-        succes = nltk.download(
-            package,
-            download_dir=str(NLTK_DIR_SECOURS),
-            quiet=True
+    dossier = tempfile.mkdtemp(prefix="nltk_data_")
+    nltk.data.path.append(dossier)
+
+    succes = nltk.download(
+        package,
+        download_dir=dossier,
+        quiet=True
+    )
+
+    if not succes:
+        raise RuntimeError(
+            f"Impossible de télécharger la ressource NLTK : {package}"
         )
-
-        if not succes:
-            raise RuntimeError(
-                f"Impossible de télécharger la ressource NLTK : {package}"
-            )
 
 
 # Ressources nécessaires au preprocessing
